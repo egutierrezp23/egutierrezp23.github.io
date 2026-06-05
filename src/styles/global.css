@@ -209,19 +209,42 @@ img { max-width: 100%; display: block; }
   line-height: 1.4;
 }
 
-/* Badge for items in progress (Research & work in progress section) */
+/* Badge for items in progress (Research & work in progress section) — pill with pulsing dot */
 .pub-badge {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  padding: 2px 8px;
+  padding: 3px 9px 3px 7px;
   margin-left: 8px;
   border-radius: 999px;
   background: var(--brand-50, #eaf2fb);
   color: var(--brand, #185FA5);
   vertical-align: middle;
+  line-height: 1;
+}
+
+.pub-badge::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--brand, #185FA5);
+  animation: pub-badge-pulse 1.6s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes pub-badge-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.25; transform: scale(0.7); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pub-badge::before { animation: none; opacity: 1; }
 }
 
 .pub-meta .pub-source {
