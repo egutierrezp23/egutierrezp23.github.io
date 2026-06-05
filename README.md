@@ -1,7 +1,7 @@
-# egutierrezp23.github.io
+# egutierrezcr.github.io
 
 Sitio personal y portafolio profesional de Emmanuel Gutiérrez Pizarro,
-Director de JP Asesores S.R.L. Bilingue (ingles por defecto, espanol con boton).
+Director de JP Asesores S.R.L. & Researcher en ADC. Bilingue (ingles por defecto, espanol con boton).
 
 Construido con Astro y desplegado en GitHub Pages.
 
