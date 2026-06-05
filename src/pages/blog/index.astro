@@ -30,8 +30,8 @@ function fmtDate(d: Date, locale: string) {
               <h3><a href={`/blog/${post.id}/`}>{post.data.title_en}</a></h3>
               <div class="pub-source">
                 {fmtDate(post.data.date, 'en-US')}
-                {post.data.original_outlet && ` — Originally in ${post.data.original_outlet}`}
-                {post.data.tags.length > 0 && ` — ${post.data.tags.join(' · ')}`}
+                {post.data.original_outlet && ` - Originally in ${post.data.original_outlet}`}
+                {post.data.tags.length > 0 && ` - ${post.data.tags.join(' · ')}`}
               </div>
               <p>{post.data.summary_en}</p>
               <a href={`/blog/${post.id}/`} class="pub-action">Read more <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></a>
@@ -47,12 +47,12 @@ function fmtDate(d: Date, locale: string) {
     <div class="container">
       <div class="page-header">
         <h1>Blog</h1>
-        <p>Notas, columnas y análisis sobre inteligencia fiscal territorial, datos comunitarios y la economía política de los territorios pequeños.</p>
+        <p>Notas, columnas y analisis sobre inteligencia fiscal territorial, datos comunitarios y la economia politica de los territorios pequenos.</p>
       </div>
 
       <section class="pub-section">
         {posts.length === 0 && (
-          <p>Aún no hay publicaciones. Pronto.</p>
+          <p>Aun no hay publicaciones. Pronto.</p>
         )}
         {posts.map((post) => (
           <article class="pub-item">
@@ -60,11 +60,11 @@ function fmtDate(d: Date, locale: string) {
               <h3><a href={`/blog/${post.id}/`}>{post.data.title_es}</a></h3>
               <div class="pub-source">
                 {fmtDate(post.data.date, 'es-CR')}
-                {post.data.original_outlet && ` — Publicado originalmente en ${post.data.original_outlet}`}
-                {post.data.tags.length > 0 && ` — ${post.data.tags.join(' · ')}`}
+                {post.data.original_outlet && ` - Publicado originalmente en ${post.data.original_outlet}`}
+                {post.data.tags.length > 0 && ` - ${post.data.tags.join(' · ')}`}
               </div>
               <p>{post.data.summary_es}</p>
-              <a href={`/blog/${post.id}/`} class="pub-action">Leer más <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></a>
+              <a href={`/blog/${post.id}/`} class="pub-action">Leer mas <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></a>
             </div>
           </article>
         ))}
