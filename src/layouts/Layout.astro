@@ -42,6 +42,7 @@ const isActive = (p: string) => path === p ? 'active' : '';
             <li><a href="/" class={isActive('/')}>Home</a></li>
             <li><a href="/proyectos" class={isActive('/proyectos/')}>Work</a></li>
             <li><a href="/publicaciones" class={isActive('/publicaciones/')}>Publications</a></li>
+            <li><a href="/blog" class={path.startsWith('/blog') ? 'active' : ''}>Blog</a></li>
             <li><a href="/trayectoria" class={isActive('/trayectoria/')}>About</a></li>
             <li><a href="/contacto" class={isActive('/contacto/')}>Contact</a></li>
           </ul>
@@ -49,6 +50,7 @@ const isActive = (p: string) => path === p ? 'active' : '';
             <li><a href="/" class={isActive('/')}>Inicio</a></li>
             <li><a href="/proyectos" class={isActive('/proyectos/')}>Proyectos</a></li>
             <li><a href="/publicaciones" class={isActive('/publicaciones/')}>Publicaciones</a></li>
+            <li><a href="/blog" class={path.startsWith('/blog') ? 'active' : ''}>Blog</a></li>
             <li><a href="/trayectoria" class={isActive('/trayectoria/')}>Trayectoria</a></li>
             <li><a href="/contacto" class={isActive('/contacto/')}>Contacto</a></li>
           </ul>

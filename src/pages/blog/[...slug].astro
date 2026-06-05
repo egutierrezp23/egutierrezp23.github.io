@@ -1,0 +1,162 @@
+---
+import { getCollection, render } from 'astro:content';
+import Layout from '../../layouts/Layout.astro';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('blog', ({ data }) => !data.draft);
+  return posts.map((post) => ({ params: { slug: post.id }, props: { post } }));
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+
+function fmtDate(d: Date, locale: string) {
+  return d.toLocaleDateString(locale, { year: 'numeric', month: 'long', day: 'numeric' });
+}
+---
+
+<Layout title={`${post.data.title_en} - Emmanuel Gutierrez Pizarro`} description={post.data.summary_en}>
+
+  <article class="container post">
+    <div class="lang-en">
+      <header class="post-header">
+        <div class="post-meta">
+          <a href="/blog/" class="post-back">← Back to blog</a>
+        </div>
+        <h1>{post.data.title_en}</h1>
+        <div class="post-byline">
+          <span>{fmtDate(post.data.date, 'en-US')}</span>
+          {post.data.original_outlet && (
+            <span> · Originally in {post.data.original_outlet}</span>
+          )}
+        </div>
+        {post.data.tags.length > 0 && (
+          <div class="post-tags">
+            {post.data.tags.map((t) => <span class="post-tag">{t}</span>)}
+          </div>
+        )}
+      </header>
+    </div>
+
+    <div class="lang-es">
+      <header class="post-header">
+        <div class="post-meta">
+          <a href="/blog/" class="post-back">← Volver al blog</a>
+        </div>
+        <h1>{post.data.title_es}</h1>
+        <div class="post-byline">
+          <span>{fmtDate(post.data.date, 'es-CR')}</span>
+          {post.data.original_outlet && (
+            <span> · Publicado originalmente en {post.data.original_outlet}</span>
+          )}
+        </div>
+        {post.data.tags.length > 0 && (
+          <div class="post-tags">
+            {post.data.tags.map((t) => <span class="post-tag">{t}</span>)}
+          </div>
+        )}
+      </header>
+    </div>
+
+    <div class="post-body">
+      <Content />
+    </div>
+
+    {post.data.original_url && (
+      <div class="post-original">
+        <div class="lang-en">
+          <a href={post.data.original_url} target="_blank" rel="noopener" class="btn btn-outline">Read the original article{post.data.original_lang === 'es' ? ' (Spanish)' : ''} <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+        </div>
+        <div class="lang-es">
+          <a href={post.data.original_url} target="_blank" rel="noopener" class="btn btn-outline">Leer el artículo original{post.data.original_lang === 'en' ? ' (Inglés)' : ''} <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+        </div>
+      </div>
+    )}
+  </article>
+
+</Layout>
+
+<style>
+  .post {
+    max-width: 720px;
+    padding-top: 3rem;
+    padding-bottom: 4rem;
+  }
+  .post-header {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border, #e5e7eb);
+  }
+  .post-meta {
+    margin-bottom: 1rem;
+  }
+  .post-back {
+    color: var(--brand, #185FA5);
+    text-decoration: none;
+    font-size: 0.95rem;
+  }
+  .post-back:hover {
+    text-decoration: underline;
+  }
+  .post-header h1 {
+    margin: 0.5rem 0 1rem 0;
+    line-height: 1.2;
+  }
+  .post-byline {
+    color: var(--text-muted, #6b7280);
+    font-size: 0.95rem;
+    margin-bottom: 1rem;
+  }
+  .post-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+  .post-tag {
+    background: var(--brand-50, #eaf2fb);
+    color: var(--brand, #185FA5);
+    font-size: 0.78rem;
+    padding: 0.18rem 0.6rem;
+    border-radius: 999px;
+    font-weight: 500;
+  }
+  .post-body {
+    font-size: 1.05rem;
+    line-height: 1.7;
+  }
+  .post-body :global(h2) {
+    margin-top: 2.2rem;
+    margin-bottom: 0.8rem;
+  }
+  .post-body :global(h3) {
+    margin-top: 1.6rem;
+    margin-bottom: 0.6rem;
+  }
+  .post-body :global(p) {
+    margin: 0 0 1.1rem 0;
+  }
+  .post-body :global(ul),
+  .post-body :global(ol) {
+    margin: 0 0 1.1rem 1.4rem;
+  }
+  .post-body :global(li) {
+    margin-bottom: 0.5rem;
+  }
+  .post-body :global(blockquote) {
+    border-left: 3px solid var(--brand, #185FA5);
+    padding: 0.4rem 0 0.4rem 1.2rem;
+    margin: 1.4rem 0;
+    font-style: italic;
+    color: var(--text-strong, #1f2937);
+  }
+  .post-body :global(a) {
+    color: var(--brand, #185FA5);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .post-original {
+    margin-top: 2.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border, #e5e7eb);
+  }
+</style>
