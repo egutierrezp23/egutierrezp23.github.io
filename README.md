@@ -1,6 +1,6 @@
 # egutierrezp23.github.io
 
-Sitio personal y portafolio profesional de Emmanuel Gutierrez Pizarro,
+Sitio personal y portafolio profesional de Emmanuel Gutiérrez Pizarro,
 Director de JP Asesores S.R.L. Bilingue (ingles por defecto, espanol con boton).
 
 Construido con Astro y desplegado en GitHub Pages.
@@ -63,7 +63,7 @@ https://TU-USUARIO.github.io/files/balance-fiscal-nosara.pdf
 
 Coloque profile.jpg en public/img/ y en index.astro (en AMBOS bloques de
 idioma) reemplace `<span class="avatar-initials">EG</span>` por
-`<img src="/img/profile.jpg" alt="Emmanuel Gutierrez Pizarro">`.
+`<img src="/img/profile.jpg" alt="Emmanuel Gutiérrez Pizarro">`.
 
 ## Tema claro / oscuro
 
