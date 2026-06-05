@@ -755,6 +755,21 @@ html[data-site-lang="es"] ul.lang-es { display: flex; }
   letter-spacing: -0.01em;
 }
 
+/* Defensa contra el ampersand decorativo de Fraunces.
+   El glyph & en Fraunces es una "Et" caligráfica ornamental ilegible.
+   Esto NO es una ligatura (font-feature-settings no la cambia),
+   es el glyph base. Solución: forzar que el carácter U+0026 (&) caiga
+   en la sans humanista en cualquier heading que use --serif. */
+@font-face {
+  font-family: 'FrauncesNoAmp';
+  src: local('Hanken Grotesk'), local('Hanken Grotesk Medium');
+  unicode-range: U+0026;
+  font-weight: 100 900;
+}
+:root {
+  --serif: 'FrauncesNoAmp', 'Fraunces', Georgia, serif;
+}
+
 /* Enlace "leer original" dentro de un articulo */
 .pub-meta .pub-action { margin-top: 8px; }
 
