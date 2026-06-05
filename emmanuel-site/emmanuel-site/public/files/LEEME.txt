@@ -1,0 +1,9 @@
+Coloque aqui los PDF que quiera publicar en el sitio.
+
+Ejemplos de nombres usados en la pagina de Publicaciones:
+  - balance-fiscal-nosara.pdf
+  - censo-nosara-2024.pdf
+
+Quedan accesibles en: https://TU-USUARIO.github.io/files/balance-fiscal-nosara.pdf
+
+Use nombres sin espacios, sin tildes y sin caracteres especiales.
