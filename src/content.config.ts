@@ -1,7 +1,7 @@
 import { defineCollection, z } from 'astro:content';
 import { glob } from 'astro/loaders';
 
-// Blog collection — bilingual posts authored in Markdown.
+// Blog collection: bilingual posts authored in Markdown.
 // Each post is a single .md file with bilingual frontmatter (title_en/title_es,
 // summary_en/summary_es) and a body that contains BOTH languages wrapped in
 // <div class="lang-en">…</div> and <div class="lang-es">…</div>. The site's

@@ -322,7 +322,7 @@ img { max-width: 100%; display: block; }
   text-underline-offset: 2px;
 }
 
-/* Badge for items in progress (Research & work in progress section) — pill with pulsing dot */
+/* Badge for items in progress (Research and work in progress section): pill with pulsing dot */
 .pub-badge {
   display: inline-flex;
   align-items: center;

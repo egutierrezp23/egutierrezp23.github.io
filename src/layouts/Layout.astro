@@ -113,7 +113,7 @@ const isActive = (p: string) => path === p ? 'active' : '';
 
       // Video embed click-to-play (facade pattern):
       // Each .video-thumb click replaces the thumbnail with the actual YouTube iframe.
-      // Until clicked, no YouTube script loads — page stays fast.
+      // Until clicked, no YouTube script loads, so the page stays fast.
       document.querySelectorAll('.video-embed').forEach(function (wrap) {
         var thumb = wrap.querySelector('.video-thumb');
         var id = wrap.getAttribute('data-video-id');
