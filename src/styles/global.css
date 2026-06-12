@@ -943,6 +943,24 @@ html[data-site-lang="es"] ul.lang-es { display: flex; }
   .dt-grid { grid-template-columns: 1fr; gap: 12px; }
 }
 
+/* Knowledge Graph embed */
+.kg-frame-wrap {
+  position: relative;
+  width: 100%;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 0.5px solid var(--border);
+  background: #fafaf8;
+  aspect-ratio: 16/9;
+}
+:root[data-theme="dark"] .kg-frame-wrap { background: #1a1a1a; }
+.kg-frame {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+}
+
 /* Foto retrato en pagina About */
 .about-portrait {
   float: right;

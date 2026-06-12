@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Territorial Knowledge Graph</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#fafaf8;overflow:hidden;font-family:'Hanken Grotesk',system-ui,sans-serif}
+canvas{display:block}
+#info{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);color:rgba(80,80,80,.3);font-size:11px;letter-spacing:.06em;pointer-events:none}
+#title{position:fixed;top:18px;left:22px;color:rgba(60,60,60,.18);font-size:11px;letter-spacing:.15em;text-transform:uppercase;pointer-events:none}
+#labels{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10}
+.lbl{position:absolute;transform:translate(-50%,-50%);white-space:nowrap;pointer-events:none;
+  font-size:11px;color:#2a3a4a;opacity:0;transition:opacity .35s,transform .4s;font-weight:500;letter-spacing:.02em}
+.lbl.show{opacity:1}
+.lbl.hub{font-size:13px;font-weight:600;color:#185FA5;letter-spacing:.03em}
+.lbl.dim{font-size:9.5px;color:#7a8a9a;font-weight:400}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="labels"></div>
+<div id="title"></div>
+<div id="info"></div>
+
+<script type="importmap">
+{"imports":{
+  "three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+}}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+
+// === Seeded PRNG ===
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const rand=mulberry32(7749);
+function grand(){let u=0,v=0;while(!u)u=rand();while(!v)v=rand();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)}
+function pick(arr){return arr[Math.floor(rand()*arr.length)]}
+
+// === Organic boundary (wobbly circle in XY) ===
+function boundaryR(a){
+  return 27.5+Math.sin(a*2.3+1.7)*3+Math.sin(a*3.7+0.5)*2+Math.sin(a*5.1+3.2)*1.2+Math.sin(a*7.3+4.1)*0.7;
+}
+function insideBoundary(x,y){
+  const a=Math.atan2(y,x),r=Math.sqrt(x*x+y*y);
+  return r<=boundaryR(a);
+}
+function zEnvelope(x,y){
+  const a=Math.atan2(y,x),r=Math.sqrt(x*x+y*y);
+  const maxR=boundaryR(a);
+  const t=Math.max(0,1-r/maxR);
+  return 8*Math.sqrt(t);
+}
+
+// === Language detection ===
+let LANG='en';
+try{const p=window.parent.document.documentElement.getAttribute('data-site-lang');if(p)LANG=p}catch(e){}
+if(LANG!=='es'&&LANG!=='en'){LANG=navigator.language.startsWith('es')?'es':'en'}
+
+document.getElementById('title').textContent=LANG==='es'?'Grafo de Conocimiento Territorial':'Territorial Knowledge Graph';
+document.getElementById('info').textContent=LANG==='es'
+  ?'arrastra: rotar · scroll: zoom · click en nodo: explorar'
+  :'drag: rotate · scroll: zoom · click node: explore';
+
+// === Topic labels pool (bilingual, generic) ===
+const LABELS={
+  hub:{
+    en:['Territorial Intelligence','Fiscal Gap Analysis','Census Framework','Knowledge Architecture',
+      'Community Governance','Environmental Policy','Land Tenure Systems','Water Resource Management',
+      'GIS Cartography','Impact Evaluation','Data Sovereignty','Institutional Analysis',
+      'Cadastral Mapping','Population Dynamics','Local Economy'],
+    es:['Inteligencia Territorial','Análisis de Brecha Fiscal','Marco Censal','Arquitectura del Conocimiento',
+      'Gobernanza Comunitaria','Política Ambiental','Régimen de Tenencia','Gestión del Recurso Hídrico',
+      'Cartografía SIG','Evaluación de Impacto','Soberanía de Datos','Análisis Institucional',
+      'Mapeo Catastral','Dinámica Poblacional','Economía Local']
+  },
+  mid:{
+    en:['Tax Revenue Model','Water Utility Operations','Municipal Budget','Household Survey','Maritime Zone Regime',
+      'Protected Area','Property Registry','Court Precedent','Field Verification','Stakeholder Map',
+      'Development Permit','Concession Rights','Public Domain','Watershed Basin','Infrastructure Index',
+      'Tourism Pressure','Regulatory Framework','Community Assembly','District Boundary','Demographic Profile',
+      'Fiscal Transfer','Revenue Capture','Land Use Plan','Coastal Access','Conservation Zone',
+      'Compliance Audit','Expropriation','Building Code','Sector Report','Constitutional Review'],
+    es:['Modelo de Recaudación','Operación de Acueducto','Presupuesto Municipal','Encuesta de Hogares','Régimen de Zona Marítima',
+      'Área Protegida','Registro de Propiedad','Precedente Judicial','Verificación de Campo','Mapa de Actores',
+      'Permiso de Desarrollo','Derechos de Concesión','Dominio Público','Cuenca Hidrográfica','Índice de Infraestructura',
+      'Presión Turística','Marco Regulatorio','Asamblea Comunitaria','Límite Distrital','Perfil Demográfico',
+      'Transferencia Fiscal','Captura de Ingresos','Plan de Uso de Suelo','Acceso Costero','Zona de Conservación',
+      'Auditoría de Cumplimiento','Expropiación','Código de Construcción','Informe Sectorial','Revisión Constitucional']
+  },
+  leaf:{
+    en:['Survey Record','GPS Waypoint','Tax Record','Field Note','Plot Boundary','Interview Transcript',
+      'Court Resolution','Executive Decree','Permit Application','Water Sample','Census Block','Lodging Record',
+      'Cadastral Folio','Expenditure Line','Revenue Receipt','Observation Log','Photo Reference','Meeting Minutes',
+      'Legal Brief','Cadastral Plan','Case File','Locality Report','Budget Item','Population Count',
+      'Infrastructure Score','Satellite Tile','Topographic Point','Historical Record','Policy Document','Data Point'],
+    es:['Registro de Encuesta','Punto GPS','Registro Tributario','Nota de Campo','Límite de Finca','Transcripción de Entrevista',
+      'Resolución Judicial','Decreto Ejecutivo','Solicitud de Permiso','Muestra de Agua','Bloque Censal','Registro de Alojamiento',
+      'Folio Catastral','Línea de Gasto','Recibo de Ingreso','Bitácora de Observación','Referencia Fotográfica','Acta de Reunión',
+      'Escrito Legal','Plano Catastrado','Expediente','Reporte por Localidad','Partida Presupuestaria','Conteo Poblacional',
+      'Puntaje de Infraestructura','Imagen Satelital','Punto Topográfico','Registro Histórico','Documento de Política','Dato Puntual']
+  }
+};
+const HUB_LABELS=LABELS.hub[LANG];
+const MID_LABELS=LABELS.mid[LANG];
+const LEAF_LABELS=LABELS.leaf[LANG];
+
+// === Graph generation (3D) ===
+const nodesX=[],nodesY=[],nodesZ=[],nCluster=[];
+
+const clusters=[
+  {cx:0,cy:1,s:7,n:500},
+  {cx:-8,cy:-10,s:3.2,n:140},{cx:11,cy:-8,s:3.5,n:130},
+  {cx:-13,cy:3,s:2.8,n:110},{cx:6,cy:13,s:3,n:120},
+  {cx:-3,cy:15,s:2.2,n:70},{cx:14,cy:6,s:2.5,n:90},
+  {cx:-11,cy:-4,s:2,n:65},{cx:5,cy:-14,s:2.5,n:80},
+  {cx:-15,cy:-9,s:2.2,n:55},{cx:10,cy:-13,s:2.2,n:65},
+  {cx:17,cy:-2,s:1.8,n:45},{cx:-7,cy:9,s:2.2,n:55},
+];
+
+clusters.forEach((c,ci)=>{
+  for(let i=0;i<c.n;i++){
+    let x,y,tries=0;
+    do{x=c.cx+grand()*c.s;y=c.cy+grand()*c.s;tries++}while(!insideBoundary(x,y)&&tries<50);
+    if(tries<50){
+      const zMax=zEnvelope(x,y);
+      const z=grand()*zMax*0.4;
+      nodesX.push(x);nodesY.push(y);nodesZ.push(z);nCluster.push(ci);
+    }
+  }
+});
+
+for(let i=0;i<950;i++){
+  const a=rand()*Math.PI*2;
+  const maxR=boundaryR(a);
+  const r=14+rand()*(maxR-14);
+  const x=Math.cos(a)*r,y=Math.sin(a)*r;
+  if(insideBoundary(x,y)){
+    const zMax=zEnvelope(x,y);
+    const z=grand()*zMax*0.3;
+    nodesX.push(x);nodesY.push(y);nodesZ.push(z);nCluster.push(-1);
+  }
+}
+const N=nodesX.length;
+
+// Spatial hash for edges (XY proximity)
+const CELL=2.8,grid=new Map();
+for(let i=0;i<N;i++){
+  const k=`${Math.floor(nodesX[i]/CELL)},${Math.floor(nodesY[i]/CELL)}`;
+  if(!grid.has(k))grid.set(k,[]);grid.get(k).push(i);
+}
+
+const edgeIdx=[];
+for(let i=0;i<N;i++){
+  const gx=Math.floor(nodesX[i]/CELL),gy=Math.floor(nodesY[i]/CELL);
+  for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++){
+    const cell=grid.get(`${gx+dx},${gy+dy}`);if(!cell)continue;
+    for(const j of cell){
+      if(j<=i)continue;
+      const ddx=nodesX[i]-nodesX[j],ddy=nodesY[i]-nodesY[j],ddz=nodesZ[i]-nodesZ[j];
+      const dist=Math.sqrt(ddx*ddx+ddy*ddy+ddz*ddz);
+      const same=nCluster[i]===nCluster[j]&&nCluster[i]>=0;
+      const prob=same?0.14:0.006;
+      const maxD=same?5:2.5;
+      if(dist<maxD&&rand()<prob*(1-dist/maxD))edgeIdx.push(i,j);
+    }
+  }
+}
+const E=edgeIdx.length/2;
+
+// Adjacency list
+const adj=Array.from({length:N},()=>[]);
+for(let k=0;k<edgeIdx.length;k+=2){
+  adj[edgeIdx[k]].push(edgeIdx[k+1]);
+  adj[edgeIdx[k+1]].push(edgeIdx[k]);
+}
+
+// Degree & sizes
+const degree=new Uint16Array(N);
+for(let i=0;i<N;i++)degree[i]=adj[i].length;
+let maxDeg=1;for(let i=0;i<N;i++)if(degree[i]>maxDeg)maxDeg=degree[i];
+const sizes=new Float32Array(N);
+const alphas=new Float32Array(N);
+for(let i=0;i<N;i++){
+  const t=degree[i]/maxDeg;
+  sizes[i]=1.5+t*22;
+  alphas[i]=0.2+t*0.8;
+}
+
+// Assign labels
+const labels=[];
+for(let i=0;i<N;i++){
+  const t=degree[i]/maxDeg;
+  if(t>0.45)labels.push(pick(HUB_LABELS));
+  else if(t>0.12)labels.push(pick(MID_LABELS));
+  else labels.push(pick(LEAF_LABELS));
+}
+
+// Oscillation params (3D)
+const osc=new Float32Array(N*6);
+for(let i=0;i<N;i++){
+  const o=i*6;
+  osc[o]=0.1+rand()*0.35;
+  osc[o+1]=0.12+rand()*0.35;
+  osc[o+2]=rand()*Math.PI*2;
+  osc[o+3]=rand()*Math.PI*2;
+  osc[o+4]=0.05+rand()*0.2;
+  osc[o+5]=rand()*Math.PI*2;
+}
+
+const restX=new Float32Array(nodesX);
+const restY=new Float32Array(nodesY);
+const restZ=new Float32Array(nodesZ);
+
+// === Three.js ===
+let W=innerWidth,H=innerHeight;
+const canvas=document.getElementById('c');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setSize(W,H);
+renderer.setClearColor(0xfafaf8);
+
+const camera=new THREE.PerspectiveCamera(45,W/H,0.1,500);
+camera.position.set(0,0,70);
+const scene=new THREE.Scene();
+
+// OrbitControls
+const controls=new OrbitControls(camera,canvas);
+controls.enableDamping=true;
+controls.dampingFactor=0.06;
+controls.rotateSpeed=0.5;
+controls.zoomSpeed=0.8;
+controls.minDistance=20;
+controls.maxDistance=160;
+controls.enablePan=true;
+controls.autoRotate=true;
+controls.autoRotateSpeed=0.15;
+
+// Nodes
+const posArr=new Float32Array(N*3);
+for(let i=0;i<N;i++){posArr[i*3]=nodesX[i];posArr[i*3+1]=nodesY[i];posArr[i*3+2]=nodesZ[i]}
+const posAttr=new THREE.Float32BufferAttribute(posArr,3);
+const sizeAttr=new THREE.Float32BufferAttribute(sizes,1);
+const alphaAttr=new THREE.Float32BufferAttribute(alphas,1);
+const nodeGeo=new THREE.BufferGeometry();
+nodeGeo.setAttribute('position',posAttr);
+nodeGeo.setAttribute('aSize',sizeAttr);
+nodeGeo.setAttribute('aAlpha',alphaAttr);
+
+const nodeMat=new THREE.ShaderMaterial({
+  transparent:true,depthWrite:false,depthTest:true,
+  uniforms:{uScale:{value:H}},
+  vertexShader:`
+    attribute float aSize;
+    attribute float aAlpha;
+    varying float vAlpha;
+    uniform float uScale;
+    void main(){
+      vAlpha=aAlpha;
+      vec4 mv=modelViewMatrix*vec4(position,1.0);
+      gl_PointSize=aSize*(uScale/350.0)*( 10.0 / -mv.z );
+      gl_Position=projectionMatrix*mv;
+    }`,
+  fragmentShader:`
+    varying float vAlpha;
+    void main(){
+      float d=length(gl_PointCoord-0.5)*2.0;
+      if(d>1.0)discard;
+      float core=smoothstep(0.8,0.0,d);
+      float glow=smoothstep(1.0,0.3,d);
+      float a=(core*0.7+glow*0.3)*vAlpha;
+      gl_FragColor=vec4(0.14,0.16,0.18,a);
+    }`
+});
+const points=new THREE.Points(nodeGeo,nodeMat);
+scene.add(points);
+
+// Edges
+const edgePos=new Float32Array(E*6);
+function syncEdges(){
+  const p=posAttr.array;
+  for(let k=0;k<edgeIdx.length;k+=2){
+    const i=edgeIdx[k],j=edgeIdx[k+1],b=k*3;
+    edgePos[b]=p[i*3];edgePos[b+1]=p[i*3+1];edgePos[b+2]=p[i*3+2];
+    edgePos[b+3]=p[j*3];edgePos[b+4]=p[j*3+1];edgePos[b+5]=p[j*3+2];
+  }
+}
+syncEdges();
+const edgeGeo=new THREE.BufferGeometry();
+edgeGeo.setAttribute('position',new THREE.Float32BufferAttribute(edgePos,3));
+const edgeMat=new THREE.LineBasicMaterial({color:0x8090a0,transparent:true,opacity:0.07,depthTest:true});
+const lines=new THREE.LineSegments(edgeGeo,edgeMat);
+scene.add(lines);
+
+// === Label system ===
+const labelContainer=document.getElementById('labels');
+let activeLabels=[];
+
+function worldToScreen(wx,wy,wz){
+  const v=new THREE.Vector3(wx,wy,wz).project(camera);
+  return{x:(v.x+1)/2*W, y:(-v.y+1)/2*H, z:v.z};
+}
+
+function clearLabels(){
+  activeLabels.forEach(el=>{el.classList.remove('show');setTimeout(()=>el.remove(),400)});
+  activeLabels=[];
+}
+
+function showNodeLabels(idx){
+  clearLabels();
+  const p=posAttr.array;
+  const cx=p[idx*3],cy=p[idx*3+1],cz=p[idx*3+2];
+  const s=worldToScreen(cx,cy,cz);
+  if(s.z>1)return;
+  const hub=document.createElement('div');
+  hub.className='lbl hub';hub.textContent=labels[idx];
+  hub.style.left=s.x+'px';hub.style.top=(s.y-18)+'px';
+  hub._nodeIdx=idx;
+  labelContainer.appendChild(hub);activeLabels.push(hub);
+  requestAnimationFrame(()=>hub.classList.add('show'));
+
+  const neighbors=adj[idx].slice(0,18);
+  neighbors.forEach((ni,k)=>{
+    const nx=p[ni*3],ny=p[ni*3+1],nz=p[ni*3+2];
+    const ns=worldToScreen(nx,ny,nz);
+    if(ns.z>1)return;
+    const el=document.createElement('div');
+    el.className=degree[ni]/maxDeg>0.12?'lbl':'lbl dim';
+    el.textContent=labels[ni];
+    el.style.left=ns.x+'px';el.style.top=(ns.y-12)+'px';
+    el._nodeIdx=ni;
+    labelContainer.appendChild(el);activeLabels.push(el);
+    setTimeout(()=>el.classList.add('show'),40+k*25);
+  });
+}
+
+// === Click detection ===
+const raycaster=new THREE.Raycaster();
+raycaster.params.Points.threshold=0.8;
+const mouse=new THREE.Vector2();
+let clickStart={x:0,y:0};
+
+canvas.addEventListener('pointerdown',e=>{clickStart={x:e.clientX,y:e.clientY}});
+canvas.addEventListener('pointerup',e=>{
+  const dx=e.clientX-clickStart.x,dy=e.clientY-clickStart.y;
+  if(Math.sqrt(dx*dx+dy*dy)>6)return;
+
+  mouse.x=(e.clientX/W)*2-1;
+  mouse.y=-(e.clientY/H)*2+1;
+  raycaster.setFromCamera(mouse,camera);
+  const ints=raycaster.intersectObject(points);
+  if(ints.length>0){showNodeLabels(ints[0].index)}
+  else{clearLabels()}
+});
+
+// === Animation ===
+const clock=new THREE.Clock();
+
+function tick(){
+  const t=clock.getElapsedTime();
+  const p=posAttr.array;
+  const breathe=1+Math.sin(t*0.25)*0.008;
+
+  for(let i=0;i<N;i++){
+    const o=i*6;
+    const ampXY=osc[o],freq=osc[o+1],px=osc[o+2],py=osc[o+3];
+    const ampZ=osc[o+4],pz=osc[o+5];
+    let x=restX[i]+Math.sin(t*freq+px)*ampXY;
+    let y=restY[i]+Math.cos(t*freq*0.87+py)*ampXY;
+    let z=restZ[i]+Math.sin(t*freq*0.65+pz)*ampZ;
+    x*=breathe;y*=breathe;z*=breathe;
+    p[i*3]=x;p[i*3+1]=y;p[i*3+2]=z;
+  }
+  posAttr.needsUpdate=true;
+  syncEdges();
+  edgeGeo.attributes.position.needsUpdate=true;
+
+  if(activeLabels.length>0){
+    activeLabels.forEach(el=>{
+      if(el._nodeIdx!==undefined){
+        const idx=el._nodeIdx;
+        const s=worldToScreen(p[idx*3],p[idx*3+1],p[idx*3+2]);
+        if(s.z>1){el.style.opacity='0'}
+        else{el.style.left=s.x+'px';el.style.top=(s.y-12)+'px'}
+      }
+    });
+  }
+
+  controls.update();
+  renderer.render(scene,camera);
+  requestAnimationFrame(tick);
+}
+tick();
+
+window.addEventListener('resize',()=>{
+  W=innerWidth;H=innerHeight;
+  renderer.setSize(W,H);
+  camera.aspect=W/H;
+  camera.updateProjectionMatrix();
+  nodeMat.uniforms.uScale.value=H;
+});
+</script>
+</body>
+</html>
